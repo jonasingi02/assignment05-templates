@@ -115,7 +115,7 @@ void *my_malloc(uint64_t size)
 	Block *free_block = _firstFreeBlock;
 	Block **update_next = &_firstFreeBlock;
 
-	while(free_block != NULL && free_block->size + HEADER_SIZE > size){
+	while(free_block->size > size){
 		if(free_block->next == NULL){
 			printf("no space for in heap memory not allocated");
 			return NULL;
