@@ -76,7 +76,9 @@ uint64_t roundUp(uint64_t n)
 	(void) n;
 
 	//TODO: Implement
-	return 0;
+	unsigned int mask = 0x0F;
+	int ret_val = (n + mask) & ~mask;
+	return ret_val;
 }
 
 /*
@@ -99,6 +101,12 @@ static void * __attribute__ ((unused)) allocate_block(Block **update_next, Block
 	// Their purpose is just to avoid compiler warnings about unused variables
 	//  as long as this function is unimplemented
 
+	uint64_t remaining_size = block->size - new_size;
+	Block* new_free_block = (Block*)(block->data + new_size);
+	new_free_block->size = remaining_size;
+	*update_next = new_free_block;
+	block->size = new_size;
+
 	// TODO: Implement
 	return NULL;
 }
@@ -106,7 +114,20 @@ static void * __attribute__ ((unused)) allocate_block(Block **update_next, Block
 
 void *my_malloc(uint64_t size)
 {
-	(void) size;
+	size = roundUp(size);
+
+	Block *free_block = _firstFreeBlock;
+	Block **update_next = &_firstFreeBlock;
+
+	while(free_block->size + HEADER_SIZE < size){
+		if(free_block->next == NULL){
+			pritnf("no space for in heap memory not allocated");
+			return;
+		}
+		free_block = free_block->next;
+	}
+
+	allocate_block(update_next, free_block, size);
 
 	// TODO: Implement
 	// Suggested approach: Search for a free block, then call allocate_block with that block
