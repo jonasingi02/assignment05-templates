@@ -94,20 +94,17 @@ uint64_t roundUp(uint64_t n)
  *   replace block with a new free block starting somewhere within block
  */
 static void * __attribute__ ((unused)) allocate_block(Block **update_next, Block *block, uint64_t new_size) {
-	(void)update_next;
-	(void)block;
-	(void)new_size;
-	// BTW, feel free to remove these lines starting (void)
-	// Their purpose is just to avoid compiler warnings about unused variables
-	//  as long as this function is unimplemented
 
-	uint64_t remaining_size = block->size - new_size;
-	Block* new_free_block = (Block*)(block->data + new_size);
-	new_free_block->size = remaining_size;
-	*update_next = new_free_block;
-	block->size = new_size;
+	if (block->size > new_size + HEADER_SIZE){
+		uint64_t remaining_size = block->size - new_size;
+		Block* new_free_block = (Block*)(block->data + new_size);
+		new_free_block->size = remaining_size;
+		*update_next = new_free_block;
+		block->size = new_size;
+	}else{
+		*update_next = block->next;
+	}
 
-	// TODO: Implement
 	return NULL;
 }
 
@@ -119,10 +116,10 @@ void *my_malloc(uint64_t size)
 	Block *free_block = _firstFreeBlock;
 	Block **update_next = &_firstFreeBlock;
 
-	while(free_block->size + HEADER_SIZE < size){
+	while(free_block != NULL && free_block->size + HEADER_SIZE < size){
 		if(free_block->next == NULL){
-			pritnf("no space for in heap memory not allocated");
-			return;
+			printf("no space for in heap memory not allocated");
+			return NULL;
 		}
 		free_block = free_block->next;
 	}
@@ -159,3 +156,8 @@ void my_free(void *address)
 }
 
 
+int main(){
+	initAllocator();
+
+    dumpAllocator();
+}
