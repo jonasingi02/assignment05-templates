@@ -115,7 +115,7 @@ void *my_malloc(uint64_t size)
 	Block *free_block = _firstFreeBlock;
 	Block **update_next = &_firstFreeBlock;
 
-	printf("size : %d, free space in heap : %d \n", size, free_block->size);
+	printf("size : %llu, free space in heap : %llu \n", size, free_block->size);
 
 	while(free_block == NULL || free_block->size < size){
 		if(free_block->next == NULL){
@@ -157,8 +157,3 @@ void my_free(void *address)
 }
 
 
-int main(){
-	initAllocator();
-
-	void *alloc1 = my_malloc(5);
-}
