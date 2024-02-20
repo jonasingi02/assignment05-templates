@@ -73,8 +73,6 @@ void dumpAllocator()
  */
 uint64_t roundUp(uint64_t n)
 {
-	(void) n;
-
 	unsigned int mask = 0x0F;
 	int ret_val = (n + mask) & ~mask;
 	return ret_val;
@@ -94,17 +92,35 @@ uint64_t roundUp(uint64_t n)
  */
 static void * __attribute__ ((unused)) allocate_block(Block **update_next, Block *block, uint64_t new_size) {
 
-	if (block->size > new_size + HEADER_SIZE){
-		uint64_t remaining_size = block->size - new_size;
-		Block* new_free_block = (Block*)(block->data + new_size);
-		new_free_block->size = remaining_size;
-		*update_next = new_free_block;
-		block->size = new_size;
-	}else{
-		*update_next = block->next;
-	}
+	// if (block->size > new_size + HEADER_SIZE){
+	// 	uint64_t remaining_size = block->size - new_size;
+	// 	Block* new_free_block = (Block*)(block->data + new_size);
+	// 	new_free_block->size = remaining_size;
+	// 	*update_next = new_free_block;
+	// 	block->size = new_size;
+	// 	block->magic = ALLOCATED_BLOCK_MAGIC;
+	// }else{
+	// 	*update_next = block->next;
+	// }
 
-	return NULL;
+	// return NULL;
+	// Ensure new_size includes the block header
+
+    new_size = roundUp(new_size + sizeof(Block));
+
+    if (block->size >= new_size + sizeof(Block)) { 
+        uint64_t remaining_size = block->size - new_size;
+        Block* new_free_block = (Block*)((uint8_t*)block + new_size);
+        new_free_block->size = remaining_size;
+        new_free_block->next = block->next; 
+        *update_next = new_free_block; 
+        block->size = new_size;
+    } else {
+        *update_next = block->next; 
+    }
+    block->magic = ALLOCATED_BLOCK_MAGIC; 
+
+    return block->data; 
 }
 
 
@@ -117,7 +133,8 @@ void *my_malloc(uint64_t size)
 
 	printf("size : %llu, free space in heap : %llu \n", size, free_block->size);
 
-	while(free_block == NULL || free_block->size < size){
+	//while(free_block == NULL || free_block->size < size){
+	while(free_block != NULL && free_block->size < size + HEADER_SIZE){
 		if(free_block->next == NULL){
 			printf("no space in heap, memory not allocated\n");
 			return NULL;
@@ -126,6 +143,7 @@ void *my_malloc(uint64_t size)
 	}
 
 	allocate_block(update_next, free_block, size);
+	
 
 	// TODO: Implement
 	// Suggested approach: Search for a free block, then call allocate_block with that block
@@ -143,17 +161,61 @@ void *my_malloc(uint64_t size)
  */
 static void __attribute__ ((unused)) merge_blocks(Block *block1, Block *block2)
 {
-	(void)block1;
-	(void)block2;
-	// TODO: Implement
+	if ((uint8_t*)block1 + block1->size == (uint8_t*)block2) {
+        block1->size += block2->size;
+        block1->next = block2->next;
+	}
+
 }
 
 
 void my_free(void *address)
 {
-	(void) address;
+	// Block *block = (Block *)((uint8_t*)address - HEADER_SIZE);
+	// Block *current = _firstFreeBlock;
+    // while (current != NULL) {
+    //     if ((uint8_t*)current + current->size == (uint8_t*)block || (uint8_t*)block + block->size == (uint8_t*)current) {
+    //         merge_blocks(current, block);
+    //         return; 
+    //     }
+    //     current = current->next;
+    // }
 
-	// TODO: Implement
+
+	if (!address) return;
+
+    Block *blockToFree = (Block *)((uint8_t*)address - HEADER_SIZE);
+    Block *prev = NULL;
+    Block *current = _firstFreeBlock;
+
+    while (current != NULL && (uint8_t*)current < (uint8_t*)blockToFree) {
+        if ((uint8_t*)current + current->size == (uint8_t*)blockToFree) {
+            merge_blocks(current, blockToFree);
+            blockToFree = current; 
+        }
+        prev = current;
+        current = current->next;
+    }
+
+    if (prev != NULL && (uint8_t*)blockToFree + blockToFree->size == (uint8_t*)current) {
+        merge_blocks(blockToFree, current);
+    } else {
+        blockToFree->next = current;
+        if (prev != NULL) {
+            prev->next = blockToFree;
+        } else {
+            _firstFreeBlock = blockToFree;
+        }
+    }
+
+    if (current != NULL && (uint8_t*)blockToFree + blockToFree->size == (uint8_t*)current) {
+        merge_blocks(blockToFree, current);
+    }
+
+
+
+
+
 }
 
 
