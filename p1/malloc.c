@@ -75,7 +75,6 @@ uint64_t roundUp(uint64_t n)
 {
 	(void) n;
 
-	//TODO: Implement
 	unsigned int mask = 0x0F;
 	int ret_val = (n + mask) & ~mask;
 	return ret_val;
@@ -116,7 +115,7 @@ void *my_malloc(uint64_t size)
 	Block *free_block = _firstFreeBlock;
 	Block **update_next = &_firstFreeBlock;
 
-	while(free_block != NULL && free_block->size + HEADER_SIZE < size){
+	while(free_block != NULL && free_block->size + HEADER_SIZE > size){
 		if(free_block->next == NULL){
 			printf("no space for in heap memory not allocated");
 			return NULL;
@@ -159,5 +158,5 @@ void my_free(void *address)
 int main(){
 	initAllocator();
 
-    dumpAllocator();
+	void *alloc1 = my_malloc(5);
 }
